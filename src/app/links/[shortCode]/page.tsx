@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "../../../lib/hooks/useAuth";
-import { getLinkAnalytics, Click } from "../../../lib/firebase/firebaseUtils";
+import { getLinkAnalytics, Click, getLinkByShortCode, deleteLink } from "../../../lib/firebase/firebaseUtils";
 import CopyButton from "../../../components/CopyButton";
 import DeleteButton from "../../../components/DeleteButton";
-import { deleteLink } from "../../../lib/firebase/firebaseUtils";
 
 export default function LinkAnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -19,24 +18,14 @@ export default function LinkAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
-      return;
-    }
+  const loadAnalytics = useCallback(async () => {
+    if (!user || !shortCode) return;
 
-    if (user && shortCode) {
-      loadAnalytics();
-    }
-  }, [user, authLoading, shortCode, router]);
-
-  const loadAnalytics = async () => {
     try {
       setLoading(true);
       setError(null);
       
       // Find the link by shortCode first
-      const { getLinkByShortCode, getLinkAnalytics } = await import("../../../lib/firebase/firebaseUtils");
       const foundLink = await getLinkByShortCode(shortCode);
 
       if (!foundLink) {
@@ -46,7 +35,7 @@ export default function LinkAnalyticsPage() {
       }
 
       // Verify ownership
-      if (foundLink.userId !== user?.uid) {
+      if (foundLink.userId !== user.uid) {
         setError("Unauthorized: You can only view analytics for your own links");
         setLoading(false);
         return;
@@ -61,7 +50,18 @@ export default function LinkAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, shortCode]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+      return;
+    }
+
+    if (user && shortCode) {
+      loadAnalytics();
+    }
+  }, [user, authLoading, shortCode, router, loadAnalytics]);
 
   const handleDelete = async () => {
     if (!user || !link) return;
