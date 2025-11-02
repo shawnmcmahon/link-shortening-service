@@ -1,48 +1,101 @@
-import Link from "next/link";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../lib/hooks/useAuth";
+import { Link } from "../lib/firebase/firebaseUtils";
+import { getUserLinksRealtime } from "../lib/firebase/firebaseUtils";
+import LinkForm from "../components/LinkForm";
+import LinkItem from "../components/LinkItem";
+
+function SignOutButton() {
+  const { signOut } = useAuth();
+  return (
+    <button
+      onClick={signOut}
+      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+    >
+      Sign Out
+    </button>
+  );
+}
 
 export default function Home() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const [links, setLinks] = useState<Link[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+      return;
+    }
+
+    if (user) {
+      setLoading(true);
+      const unsubscribe = getUserLinksRealtime(user.uid, (updatedLinks) => {
+        setLinks(updatedLinks);
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
+    }
+  }, [user, authLoading, router]);
+
+  const handleLinkCreated = () => {
+    // Links will update automatically via realtime listener
+  };
+
+  const handleLinkDeleted = () => {
+    // Links will update automatically via realtime listener
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-8">
-      <div>
-        <h2 className="text-2xl font-semibold text-center border p-4 font-mono rounded-md">
-          Get started by choosing a template path from the /paths/ folder.
-        </h2>
-      </div>
-      <div>
-        <h1 className="text-6xl font-bold text-center">Make anything you imagine 🪄</h1>
-        <h2 className="text-2xl text-center font-light text-gray-500 pt-4">
-          This whole page will be replaced when you run your template path.
-        </h2>
-      </div>
-      <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="border rounded-lg p-6 hover:bg-gray-100 transition-colors">
-          <h3 className="text-xl font-semibold">AI Chat App</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            An intelligent conversational app powered by AI models, featuring real-time responses
-            and seamless integration with Next.js and various AI providers.
-          </p>
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">My Links</h1>
+            <p className="mt-1 text-sm text-gray-600">Create and manage your shortened links</p>
+          </div>
+          <SignOutButton />
         </div>
-        <div className="border rounded-lg p-6 hover:bg-gray-100 transition-colors">
-          <h3 className="text-xl font-semibold">AI Image Generation App</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            Create images from text prompts using AI, powered by the Replicate API and Next.js.
-          </p>
+
+        <div className="mb-8">
+          <LinkForm userId={user.uid} onLinkCreated={handleLinkCreated} />
         </div>
-        <div className="border rounded-lg p-6 hover:bg-gray-100 transition-colors">
-          <h3 className="text-xl font-semibold">Social Media App</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            A feature-rich social platform with user profiles, posts, and interactions using
-            Firebase and Next.js.
-          </p>
-        </div>
-        <div className="border rounded-lg p-6 hover:bg-gray-100 transition-colors">
-          <h3 className="text-xl font-semibold">Voice Notes App</h3>
-          <p className="mt-2 text-sm text-gray-600">
-            A voice-based note-taking app with real-time transcription using Deepgram API, 
-            Firebase integration for storage, and a clean, simple interface built with Next.js.
-          </p>
+
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Your Links</h2>
+          {links.length === 0 ? (
+            <div className="bg-white p-8 rounded-lg shadow-md text-center">
+              <p className="text-gray-500">No links yet. Create your first shortened link above!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {links.map((link) => (
+                <LinkItem key={link.id} link={link} onDeleted={handleLinkDeleted} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
