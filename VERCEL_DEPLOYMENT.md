@@ -181,6 +181,29 @@ You need to add your Vercel domain to Firebase Auth allowed domains:
 3. Follow DNS configuration instructions
 4. Update Firebase Authorized domains with your custom domain
 
+### Changing Your Vercel Domain (*.vercel.app)
+
+**Important:** The `*.vercel.app` domain is based on your **project slug**, not the project name. Simply renaming your project in the dashboard won't change the domain.
+
+**To change the domain (e.g., from `link-shortening-service.vercel.app` to `lss.vercel.app`):**
+
+1. **Option A: Change Project Slug (if available)**
+   - Go to **Settings** → **General** → **Project Slug**
+   - Change it from `link-shortening-service` to `lss`
+   - Click **Save**
+   - The domain should update to `lss.vercel.app`
+
+2. **Option B: Create a New Project with Desired Slug**
+   - Create a new Vercel project and name it `lss` (the slug will be `lss`)
+   - Connect the same Git repository
+   - Copy all environment variables from the old project
+   - Delete the old project after confirming the new one works
+
+**After changing the domain, remember to:**
+- Update Firebase Authorized Domains with the new domain
+- Update Google OAuth settings with the new domain
+- Redeploy to ensure everything works correctly
+
 ## Troubleshooting
 
 ### "Missing environment variables"

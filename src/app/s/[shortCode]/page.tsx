@@ -19,13 +19,15 @@ export default function RedirectPage() {
           return;
         }
 
-        // Track click in background (don't await to avoid delay)
-        trackClick(link.id, shortCode).catch((error) => {
+        // Track click before redirecting to ensure it completes
+        try {
+          await trackClick(link.id, shortCode);
+        } catch (error) {
           console.error("Error tracking click:", error);
-          // Don't block redirect if tracking fails
-        });
+          // Continue with redirect even if tracking fails
+        }
 
-        // Redirect immediately
+        // Redirect after click tracking completes
         window.location.href = link.originalUrl;
       } catch (error) {
         console.error("Error in redirect:", error);
