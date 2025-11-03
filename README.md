@@ -1,4 +1,4 @@
-# Link Shortening Service
+# Shawn McMahon's Link Shortening Service - SMLSS
 
 A modern, full-featured URL shortener built with Next.js, Firebase, and Tailwind CSS. Create, manage, and track shortened links with real-time analytics.
 
